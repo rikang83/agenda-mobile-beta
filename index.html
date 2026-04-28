@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda Professionale 2026</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+
+    <style>
+        .btn-today-header {
+            background: var(--a);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:15px;">
+
+        <button onclick="openModal('mainModal')" class="btn-icon-header">
+            ⚙️
+        </button>
+
+        <div id="notif-trigger"
+             onclick="toggleNotifiche()"
+             style="position:relative; cursor:pointer;"
+             class="btn-icon-header">
+            🔔<span id="notif-badge">0</span>
+        </div>
+
+        <select id="monthPicker" onchange="initCalendar()"></select>
+
+        <button onclick="saltaAggiOggi()" class="btn-today-header">
+            TODAY
+        </button>
+
+        <button onclick="condividiWhatsApp()" class="btn-icon-header">
+            ➦
+        </button>
+
+    </div>
+
+    <div class="nav-buttons">
+        <button class="nav-btn" onclick="toggleVista('g')">GIORNO</button>
+        <button class="nav-btn" onclick="toggleVista('m')">MESE</button>
+
+        <button class="nav-btn"
+                style="background:var(--a); border:none;"
+                onclick="openRepModal()">
+            RIPETI/PULISCI
+        </button>
+
+        <div class="master-switch">
+            RIGHE
+            <label class="switch">
+                <input type="checkbox"
+                       id="checkRighe"
+                       checked
+                       onchange="salvaStatoRighe(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="master-switch">
+            ORA
+            <label class="switch">
+                <input type="checkbox"
+                       id="checkOrarioLabel"
+                       checked
+                       onchange="salvaStatoOra(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <button class="nav-btn"
+                style="background:#673ab7; border:none;"
+                onclick="openChartModal()">
+            STATISTICHE
+        </button>
+    </div>
+</div>
+
+
+<div id="vGiorno">
+    <div class="calendar-strip" id="strip"></div>
+
+    <input
+      type="text"
+      id="titoloGiorno"
+      class="day-title"
+      placeholder="TITOLO GIORNATA (es. Matrimonio Rossi)"
+      onblur="salvaTitolo(this.value)"
+    >
+
+    <div id="listaImpegni" style="padding-bottom:100px;"></div>
+
+    <button class="fab-add"
+            id="btnAddExtra"
+            onclick="aggiungiRigaExtra()">
+        +
+    </button>
+</div>
+
+
+<div id="vMese" style="display:none;">
+    <div class="grid-mese" id="corpoMeseHead">
+        <div class="nome-giorno">LUN</div>
+        <div class="nome-giorno">MAR</div>
+        <div class="nome-giorno">MER</div>
+        <div class="nome-giorno">GIO</div>
+        <div class="nome-giorno">VEN</div>
+        <div class="nome-giorno">SAB</div>
+        <div class="nome-giorno">DOM</div>
+    </div>
+
+    <div class="grid-mese" id="corpoMese"></div>
+</div>
+
+
+
+<div id="mainModal" class="overlay" onclick="closeModal('mainModal')">
+<div class="modal-box" onclick="event.stopPropagation()">
+
+<h3 style="text-align:center;">Schemi Rapidi</h3>
+
+<button onclick="applicaSchemaMatrimonio()"
+style="width:100%; padding:15px; background:var(--p); color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">
+CARICA SCHEMA MATRIMONIO
+</button>
+
+<button onclick="applicaSchemaBattesimo()"
+style="width:100%; padding:15px; background:var(--battesimo); color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">
+CARICA SCHEMA BATTESIMO
+</button>
+
+<hr>
+
+<button onclick="pulisciTuttoGiorno(giornoCorrente)"
+style="width:100%; padding:15px; background:var(--festivo); color:white; border:none; border-radius:8px; font-weight:bold;">
+CANCELLA TUTTI I DATI DI OGGI
+</button>
+
+</div>
+</div>
+
+
+
+<div id="repModal" class="overlay" onclick="closeModal('repModal')">
+<div class="modal-box" onclick="event.stopPropagation()">
+
+<h3 style="margin-top:0;text-align:center;">Ripeti Impegno</h3>
+
+<input
+id="repTesto"
+type="text"
+placeholder="Cosa ripetere?"
+style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px;"
+>
+
+<div style="display:flex; gap:10px; margin-top:10px;">
+<select id="repHInizio" style="flex:1;padding:10px;"></select>
+<select id="repHFine" style="flex:1;padding:10px;"></select>
+</div>
+
+<div style="font-size:11px;font-weight:bold;color:var(--p);margin-top:15px;">
+Giorni della settimana:
+</div>
+
+<div style="display:flex;justify-content:space-between;margin:10px 0;">
+<div class="dot-day-rep" onclick="toggleRepDay(this,1)">L</div>
+<div class="dot-day-rep" onclick="toggleRepDay(this,2)">M</div>
+<div class="dot-day-rep" onclick="toggleRepDay(this,3)">M</div>
+<div class="dot-day-rep" onclick="toggleRepDay(this,4)">G</div>
+<div class="dot-day-rep" onclick="toggleRepDay(this,5)">V</div>
+<div class="dot-day-rep" onclick="toggleRepDay(this,6)">S</div>
+<div class="dot-day-rep" onclick="toggleRepDay(this,0)">D</div>
+</div>
+
+<input
+type="date"
+id="repDataFine"
+style="width:100%; padding:12px; margin-top:5px;"
+>
+
+<button onclick="eseguiRipetizione()"
+style="width:100%; padding:14px; background:var(--a); color:white; border:none; border-radius:12px; margin-top:15px;">
+CONFERMA E COPIA
+</button>
+
+<button onclick="cancellaRipetizioniInBlocco()"
+style="width:100%; padding:10px; background:none; color:var(--festivo); border:2px solid var(--festivo); margin-top:10px;">
+CANCELLA SERIE (DA OGGI IN POI)
+</button>
+
+</div>
+</div>
+
+
+
+<div id="chartModal" class="overlay" onclick="closeModal('chartModal')">
+<div class="modal-box" style="max-width:900px;width:95%;" onclick="event.stopPropagation()">
+
+<h2 style="text-align:center;color:var(--p);margin-top:0;">
+Andamento Lavori 2026
+</h2>
+
+<div style="text-align:center;margin-bottom:20px;">
+<small style="color:#666;display:block;">Eventi totali registrati</small>
+<span id="totalWorkCount"
+style="font-size:32px;font-weight:800;color:var(--a);">
+0
+</span>
+</div>
+
+<div style="position:relative;height:300px;width:100%;">
+<canvas id="workChart"></canvas>
+</div>
+
+<div id="statsLegend" class="legend-grid" style="margin-top:20px;"></div>
+
+<button onclick="closeModal('chartModal')"
+style="display:block;width:100%;margin-top:20px;padding:15px;background:var(--p);color:white;border:none;border-radius:12px;">
+TORNA ALL'AGENDA
+</button>
+
+</div>
+</div>
+
+
+
+<div id="notifModal" class="overlay" onclick="closeModal('notifModal')">
+<div class="modal-box" style="max-width:400px;" onclick="event.stopPropagation()">
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:2px solid #eee;padding-bottom:10px;">
+<h3 style="margin:0;">Log Attività</h3>
+
+<button onclick="closeModal('notifModal')"
+style="background:none;border:none;font-size:24px;">
+✕
+</button>
+</div>
+
+<div id="notif-list"
+style="max-height:400px;overflow-y:auto;padding-right:5px;">
+</div>
+
+<div class="notif-actions">
+<button onclick="segnaTutteLette()" class="btn-notif-read">
+Segna come lette
+</button>
+
+<button onclick="closeModal('notifModal')" class="btn-notif-close">
+Chiudi
+</button>
+</div>
+
+</div>
+</div>
+
+
+
+<script src="script.js"></script>
+
+<!-- REGISTRAZIONE PWA -->
+<script>
+if ("serviceWorker" in navigator) {
+window.addEventListener("load", function () {
+navigator.serviceWorker
+.register("./service-worker.js")
+.then(function(reg){
+console.log("Service Worker registrato", reg);
+})
+.catch(function(err){
+console.log("Errore service worker", err);
+});
+});
+}
+</script>
+
+</body>
+</html>
