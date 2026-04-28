@@ -1,7 +1,7 @@
 {
 "name": "Agenda Professionale",
 "short_name": "Agenda",
-"start_url": "/agenda-personale/index.html",
+"start_url": "/agenda-mobile-beta/",
 "display": "standalone",
 "background_color": "#ffffff",
 "theme_color": "#000000",
