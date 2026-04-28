@@ -1,0 +1,230 @@
+:root { 
+    --p: #1a237e; 
+    --r: #2196f3; 
+    --a: #4caf50; 
+    --festivo: #d32f2f; 
+    --festivo-dark: #b71c1c; 
+    --evidenza: #fffbe6; 
+    --battesimo: #03a9f4;
+    --notif-bg: #fff9c4; 
+}
+
+body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; overflow-x: hidden; }
+.header { background: var(--p); color: white; padding: 10px; text-align: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+
+#monthPicker { 
+    width: 95%; padding: 12px; border-radius: 8px; margin-bottom: 5px; font-size: 20px; font-weight: 900; 
+    text-align: center; text-align-last: center; appearance: none; background: white; border: none; color: var(--p);
+}
+
+.nav-buttons { display: flex; justify-content: center; gap: 5px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.nav-btn { background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+
+/* Switch Toggle Orario/Righe */
+.master-switch { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.1); padding: 5px 8px; border-radius: 20px; border: 1px solid white; font-size: 9px; }
+.switch { position: relative; width: 30px; height: 16px; display: inline-block; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 20px; transition: .3s; }
+.slider:before { position: absolute; content: ""; height: 10px; width: 10px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+input:checked + .slider { background: var(--a); }
+input:checked + .slider:before { transform: translateX(14px); }
+
+/* --- STRIP GIORNI ORIZZONTALE CON SCROLLBAR FORZATA --- */
+.calendar-strip { 
+    display: flex; 
+    overflow-x: scroll !important; 
+    padding: 15px 10px; 
+    background: white; 
+    gap: 8px; 
+    border-bottom: 1px solid #ddd; 
+    scrollbar-width: thin; 
+    scrollbar-color: #bbb #f1f1f1; 
+}
+
+.calendar-strip::-webkit-scrollbar { 
+    height: 10px !important; 
+    display: block !important; 
+}
+.calendar-strip::-webkit-scrollbar-track { 
+    background: #f1f1f1 !important; 
+}
+.calendar-strip::-webkit-scrollbar-thumb { 
+    background: #bbb !important; 
+    border-radius: 10px; 
+    border: 2px solid #f1f1f1;
+}
+.calendar-strip::-webkit-scrollbar-thumb:hover { 
+    background: var(--r) !important; 
+}
+
+.day-item { min-width: 55px; padding: 10px 5px; border-radius: 10px; border: 1px solid #eee; text-align: center; cursor: pointer; background: white; flex-shrink: 0; transition: 0.2s; }
+.day-item.active { background: var(--r) !important; color: white !important; transform: scale(1.05); }
+.day-item.holiday { background: #ffebee !important; color: var(--festivo) !important; }
+.day-item.nat-holiday { background: #ffcdd2 !important; color: var(--festivo-dark) !important; border: 1px solid var(--festivo); }
+
+/* Titolo Giorno (Input Giallo) */
+.day-title { width: 100%; padding: 15px; border: none; background: var(--evidenza); font-weight: bold; text-align: center; font-size: 16px; border-bottom: 2px solid #ffe082; box-sizing: border-box; outline: none; }
+
+/* Slot Impegni */
+.slot { background: white; margin: 8px 10px; padding: 10px; border-radius: 12px; border-left: 10px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; transition: background 0.3s; }
+.slot-main { display: flex; gap: 10px; align-items: flex-start; }
+.ora-box { width: 75px; flex-shrink: 0; }
+.ora-box.hidden { display: none; }
+.ora-input { width: 100%; border: 1px solid #eee; border-radius: 6px; padding: 8px; font-weight: bold; text-align: center; background: #f8f9fa; color: var(--p); }
+.nota-input { flex: 1; border: 1px solid #eee; border-radius: 6px; padding: 8px; font-size: 15px; min-height: 38px; resize: none; outline: none; overflow: hidden; display: block; width: 100%; box-sizing: border-box; color: #000; font-weight: bold; line-height: 1.4; }
+
+/* Griglia Esterni (Matrimonio) */
+.esterni-grid { display: grid; grid-template-columns: 75px 1fr; gap: 6px; background: #f1f8e9; padding: 12px; border-radius: 10px; border: 2px solid #c5e1a5; width: 100%; box-sizing: border-box; }
+.esterni-header-label { font-size: 13px; font-weight: 900; color: #388e3c; margin-bottom: 4px; grid-column: span 2; }
+.loc-input { border: 1px solid #c5e1a5; border-radius: 6px; padding: 8px; font-size: 14px; font-weight: bold; background: white; }
+
+/* Blocco Amministrativo */
+.admin-block { background: #fdfdfd; border: 2px solid #bbb; border-radius: 10px; padding: 12px; margin-top: 5px; }
+.admin-top-row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 12px; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+.admin-grid { display: grid; grid-template-columns: 100px 85px 125px auto; gap: 10px; align-items: center; overflow-x: auto; }
+.admin-label-row { font-size: 12px; font-weight: bold; color: #333; }
+.input-adm { border: 1px solid #999; border-radius: 5px; padding: 6px; font-size: 13px; font-weight: bold; }
+.adm-dots { display: flex; gap: 5px; }
+
+/* Cerchi Colore R/A/D/V */
+.color-dots { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; align-items: center; }
+.dot, .dot-s { width: 28px; height: 28px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); opacity: 0.4; }
+.dot.active, .dot-s.active { opacity: 1; border: 2px solid #333; transform: scale(1.1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+/* --- VISTA MESE: SCHERMATA UNICA (NO SCROLL) --- */
+#vMese {
+    display: none; 
+    width: 100%;
+    overflow-x: hidden !important; 
+    background: #f0f2f5;
+    touch-action: pan-y; 
+}
+
+.grid-mese {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important; 
+    width: 100% !important;
+    background: #ddd;
+    gap: 1px;
+    border-bottom: 1px solid #ddd;
+    box-sizing: border-box;
+}
+
+.nome-giorno {
+    background: var(--p);
+    color: white;
+    text-align: center;
+    padding: 8px 1px;
+    font-weight: bold;
+    font-size: 10px; 
+    text-transform: uppercase;
+}
+
+.cell-mese {
+    background: white;
+    min-height: 85px; 
+    padding: 4px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.cell-header {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.num-giorno {
+    font-weight: 900;
+    font-size: 11px;
+    color: #333;
+}
+
+.item-mese {
+    font-size: 8px;
+    padding: 1px 3px;
+    border-radius: 3px;
+    color: white;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+}
+
+.cell-mese.holiday { background: #fff5f5; }
+.cell-mese.nat-holiday { background: #ffebee; }
+.cell-mese.active { background: #e8f0fe; }
+
+#corpoMeseHead {
+    width: 100% !important;
+}
+
+/* Modali */
+.overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal-box { background: white; width: 92%; max-width: 450px; padding: 25px; border-radius: 20px; overflow-y: auto; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+/* --- AZIONI NOTIFICHE (CHIRURGICO) --- */
+.notif-actions { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+.btn-notif-read { flex: 2; background: var(--a); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.btn-notif-close { flex: 1; background: #eee; color: #333; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.notif-item.read { opacity: 0.5; border-left-color: #ccc; background: #fafafa; }
+
+/* Notifiche Badge e Lista */
+@keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+.badge-new { animation: bounce 0.6s ease infinite; background: #ff5252; color: white; border: 2px solid white; }
+
+#notif-badge { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: none; align-items: center; justify-content: center; font-weight: bold; }
+
+.notif-item { 
+    background: #fff; border-left: 5px solid var(--r); padding: 12px; border-radius: 8px; margin-bottom: 10px; 
+    font-size: 13px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+}
+.notif-item:active { transform: scale(0.98); background: #eee; }
+
+/* Battesimo Style */
+.macro-battesimo { background: #e1f5fe; border: 3px solid var(--battesimo); border-radius: 15px; padding: 15px; margin: 10px; }
+.titolo-battesimo { background: var(--battesimo); color: white; text-align: center; padding: 10px; border-radius: 10px; font-weight: 900; letter-spacing: 2px; margin-bottom: 15px; font-size: 18px; }
+
+/* Floating Action Button */
+.fab-add { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; background: var(--r); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 4px solid white; z-index: 1500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; }
+
+/* Mobile Optimizations */
+@media (max-width: 600px) {
+    .admin-grid { grid-template-columns: 1fr 1fr; }
+    .admin-label-row { grid-column: span 2; background: #eee; padding: 2px 5px; }
+}
+
+/* Stile chirurgico per il tasto TODAY */
+.btn-today-header {
+    background-color: var(--a); /* Usa il colore arancione/accento che hai già nel sito */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px; /* Lo facciamo arrotondato per distinguerlo dalle icone */
+    font-weight: bold;
+    font-size: 11px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.1s, background-color 0.2s;
+    text-transform: uppercase;
+    flex-shrink: 0; /* Impedisce al tasto di rimpicciolirsi se c'è poco spazio */
+}
+
+.btn-today-header:active {
+    transform: scale(0.92); /* Effetto pressione al click */
+    background-color: var(--p); /* Diventa leggermente più scuro (colore primary) */
+}
+
+/* Opzionale: se vedi che l'header è troppo affollato su cellulari piccoli */
+@media (max-width: 360px) {
+    .btn-today-header {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
