@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda Professionale 2026</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        /* STILE PER I TONDINI (RIPETI) */
+        .dot-day-rep {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #eee;
+            color: #333;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #ddd;
+            margin: 2px;
+        }
+
+        .dot-day-rep.active {
+            background: #6a1b9a !important; /* Viola Today */
+            color: white !important;
+            border-color: #4a148c;
+            transform: scale(1.1);
+        }
+
+        /* STILE PER I BOTTONI HEADER */
+        .btn-today-nav {
+            background: #6a1b9a !important; 
+            color: white !important;
+        }
+
+        .btn-today-header {
+            background: var(--a);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        #installBtn {
+            display: none; 
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+		
+    </style>
+</head>
+<body>
+
+<div class="header" style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+    
+    <!-- RIGA 1: Impostazioni, Tendina, Campanella -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <button onclick="openModal('mainModal')" class="btn-icon-header">⚙️</button>
+        
+        <select id="monthPicker" onchange="initCalendar()" style="flex-grow: 1; min-width: 0; height: 42px;"></select>
+        
+        <div id="notif-trigger" onclick="toggleNotifiche()" class="btn-icon-header">
+            🔔<span id="notif-badge">0</span>
+        </div>
+    </div>
+
+    <!-- RIGA 2: Viste e Today -->
+    <div style="display: flex; justify-content: center; gap: 8px;">
+        <button class="nav-btn" onclick="toggleVista('g')" style="flex: 1;">GIORNO</button>
+        <button class="nav-btn" onclick="toggleVista('m')" style="flex: 1;">MESE</button>
+        <button class="nav-btn btn-today-nav" onclick="saltaAggiOggi()" style="flex: 1;">TODAY</button>
+    </div>
+
+    <!-- RIGA 3: Switch, Ripeti e Condividi -->
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px;">
+        <div style="display: flex; gap: 8px;">
+            <div class="master-switch">
+                R
+                <label class="switch">
+                    <input type="checkbox" id="checkRighe" checked onchange="salvaStatoRighe(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>            
+        </div>
+
+        <button class="nav-btn btn-ripeti" onclick="openRepModal()" style="font-size: 9px; padding: 8px 5px;">
+            RIPETI/PULISCI
+        </button>
+
+        <button onclick="condividiWhatsApp()" class="btn-icon-header" style="width: 38px; height: 38px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<div id="vGiorno">
+    <div class="calendar-strip" id="strip"></div>
+    <input type="text" id="titoloGiorno" class="day-title" placeholder="TITOLO GIORNATA (es. Matrimonio Rossi)" onblur="salvaTitolo(this.value)">
+    <div id="listaImpegni" style="padding-bottom:100px;"></div>
+    <button class="fab-add" id="btnAddExtra" onclick="aggiungiRigaExtra()">+</button>
+</div>
+
+<div id="vMese" style="display:none;">
+    <div class="grid-mese" id="corpoMeseHead">
+        <div class="nome-giorno">LUN</div><div class="nome-giorno">MAR</div><div class="nome-giorno">MER</div>
+        <div class="nome-giorno">GIO</div><div class="nome-giorno">VEN</div><div class="nome-giorno">SAB</div>
+        <div class="nome-giorno">DOM</div>
+    </div>
+    <div class="grid-mese" id="corpoMese"></div>
+</div>
+
+<div id="mainModal" class="overlay" onclick="closeModal('mainModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <h3 style="text-align:center;">Schemi Rapidi</h3>
+        
+        <!-- Ho aggiunto solo questa riga, usando lo stesso stile dei tuoi bottoni sotto -->
+        <button onclick="openStatsModal()" style="width:100%; padding:15px; background:#2196F3; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">VISUALIZZA STATISTICHE</button>
+
+        <button onclick="applicaSchemaMatrimonio()" style="width:100%; padding:15px; background:var(--p); color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">CARICA SCHEMA MATRIMONIO</button>
+        <button onclick="applicaSchemaBattesimo()" style="width:100%; padding:15px; background:var(--battesimo); color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">CARICA SCHEMA BATTESIMO</button>
+        <hr>
+        <button onclick="pulisciTuttoGiorno(giornoCorrente)" style="width:100%; padding:15px; background:var(--festivo); color:white; border:none; border-radius:8px; font-weight:bold;">CANCELLA TUTTI I DATI DI OGGI</button>
+    </div>
+</div>
+
+<div id="repModal" class="overlay" onclick="closeModal('repModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <h3 style="margin-top:0;text-align:center;">Ripeti Impegno</h3>
+        <input id="repTesto" type="text" placeholder="Cosa ripetere?" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px;">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <select id="repHInizio" style="flex:1;padding:10px;"></select>
+            <select id="repHFine" style="flex:1;padding:10px;"></select>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin:10px 0;">
+            <div class="dot-day-rep" onclick="toggleRepDay(this,1)">L</div><div class="dot-day-rep" onclick="toggleRepDay(this,2)">M</div>
+            <div class="dot-day-rep" onclick="toggleRepDay(this,3)">M</div><div class="dot-day-rep" onclick="toggleRepDay(this,4)">G</div>
+            <div class="dot-day-rep" onclick="toggleRepDay(this,5)">V</div><div class="dot-day-rep" onclick="toggleRepDay(this,6)">S</div>
+            <div class="dot-day-rep" onclick="toggleRepDay(this,0)">D</div>
+        </div>
+        <input type="date" id="repDataFine" style="width:100%; padding:12px; margin-top:5px;">
+        <button onclick="eseguiRipetizione()" style="width:100%; padding:14px; background:var(--a); color:white; border:none; border-radius:12px; margin-top:15px;">CONFERMA E COPIA</button>
+<button onclick="pulisciPerParolaChiave()" style="width:100%; padding:14px; background:#dc3545; color:white; border:none; border-radius:12px; margin-top:10px; font-weight:bold;">
+    🗑️ PULISCI PER PAROLA CHIAVE
+</button>
+    </div>
+</div>
+
+<div id="chartModal" class="overlay" onclick="closeModal('chartModal')">
+    <div class="modal-box" style="max-width:900px;width:95%;" onclick="event.stopPropagation()">
+        <h2 style="text-align:center;color:var(--p);margin-top:0;">Andamento Lavori 2026</h2>
+        <div style="text-align:center;margin-bottom:20px;">
+            <small style="color:#666;display:block;">Eventi totali registrati</small>
+            <span id="totalWorkCount" style="font-size:32px;font-weight:800;color:var(--a);">0</span>
+        </div>
+        <div style="position:relative;height:300px;width:100%;"><canvas id="workChart"></canvas></div>
+        <button onclick="closeModal('chartModal')" style="display:block;width:100%;margin-top:20px;padding:15px;background:var(--p);color:white;border:none;border-radius:12px;">TORNA ALL'AGENDA</button>
+    </div>
+</div>
+
+<div id="notifModal" class="overlay" onclick="closeModal('notifModal')">
+    <div class="modal-box" style="max-width:400px;" onclick="event.stopPropagation()">
+        <h3 style="margin:0; border-bottom:2px solid #eee; padding-bottom:10px;">Log Attività</h3>
+        <div id="notif-list" style="max-height:400px;overflow-y:auto;padding:10px 0;"></div>
+        <div class="notif-actions">
+            <button onclick="segnaTutteLette()" class="btn-notif-read">Segna come lette</button>
+            <button onclick="closeModal('notifModal')" class="btn-notif-close">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<!-- Qui finisce l'ultimo modale (notifModal) -->
+
+<!-- 1. IL TASTO INSTALLA: lo mettiamo qui così il JS lo trova subito -->
+<button id="installBtn" style="display:none; position:fixed; bottom:20px; right:20px; background:#28a745; color:white; border:none; padding:12px; border-radius:50px; font-weight:bold; z-index:999; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor:pointer;">
+   📲 INSTALLA APP
+</button>
+
+<!-- 2. CARICHIAMO IL TUO SCRIPT (Una sola volta!) -->
+<script src="script.js"></script>
+
+<!-- 3. TUTTA LA LOGICA PWA E NOTIFICHE -->
+<script>
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+
+// Registrazione Service Worker
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+        .then(reg => console.log("SW OK"))
+        .catch(err => console.warn("SW non disponibile localmente"));
+    });
+}
+
+// Gestione Installazione
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) installBtn.style.display = 'block';
+});
+
+if (installBtn) {
+    installBtn.addEventListener('click', () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choice) => {
+                if (choice.outcome === 'accepted') installBtn.style.display = 'none';
+                deferredPrompt = null;
+            });
+        }
+    });
+}
+
+window.addEventListener('appinstalled', () => {
+    if (installBtn) installBtn.style.display = 'none';
+});
+
+// Richiesta Notifiche
+window.addEventListener('load', () => {
+    if ("Notification" in window) {
+        Notification.requestPermission();
+    }
+});
+</script>
+
+</body>
+</html>
